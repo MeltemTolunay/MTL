@@ -13,7 +13,7 @@ class ClothingAttributeDataset(Dataset):
         """
         :param labels_dir: Path to the labels folder.
         :param images_dir: Path to the images folder.
-        :param transform: Optional transform.
+        :param transform: Optional transform. (But make sure images are the same size if you choose to omit!)
         """
 
         # Labeling categories
