@@ -104,12 +104,12 @@ if __name__ == "__main__":
 
 
 
-'''
+"""
 TODO:
 - Compute the correct mean and std
 - Data augmentation same as in A. Krizhevsky et al.
 - Divide into train, test, val
-'''
+"""
 
 
 
