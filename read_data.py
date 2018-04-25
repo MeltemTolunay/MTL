@@ -102,7 +102,8 @@ def main():
         transforms.Normalize(mean=[0.485, 0.456, 0.406],
                              std=[0.229, 0.224, 0.225])  # Correct these values later?
     ])
-
+    
+    # Data augmentation and transforms for VALIDATION
     data_transform_val = transforms.Compose([
         transforms.ToPILImage(),
         transforms.Resize((224, 224)),
@@ -110,7 +111,8 @@ def main():
         transforms.Normalize(mean=[0.485, 0.456, 0.406],
                              std=[0.229, 0.224, 0.225])  # Correct these values later?
     ])
-
+       
+    # Data augmentation and transforms for TESTING
     data_transform_test = transforms.Compose([
         transforms.ToPILImage(),
         transforms.Resize((224, 224)),
