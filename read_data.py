@@ -1,4 +1,4 @@
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, sampler
 from torchvision import transforms
 import numpy as np
 from skimage import io
@@ -36,11 +36,10 @@ class ClothingAttributeDataset(Dataset):
         self.attributes_matrix = self.attributes['black']
         for category in self.categories[1:]:
             self.attributes_matrix = np.hstack((self.attributes_matrix, self.attributes[category]))
-        if self.train:
-            self.attributes_matrix = self.attributes_matrix[:1484]
-        else:
-            self.attributes_matrix = self.attributes_matrix[1484:]
-
+        #if self.train:
+        #    self.attributes_matrix = self.attributes_matrix[:1484]
+        #else:
+        #    self.attributes_matrix = self.attributes_matrix[1484:]
 
         # Images directory
         self.images_dir = images_dir
@@ -102,8 +101,7 @@ def main():
         transforms.Normalize(mean=[0.485, 0.456, 0.406],
                              std=[0.229, 0.224, 0.225])  # Correct these values later?
     ])
-    
-    # Data transforms for VALIDATION
+
     data_transform_val = transforms.Compose([
         transforms.ToPILImage(),
         transforms.Resize((224, 224)),
@@ -111,8 +109,7 @@ def main():
         transforms.Normalize(mean=[0.485, 0.456, 0.406],
                              std=[0.229, 0.224, 0.225])  # Correct these values later?
     ])
-       
-    # Data transforms for TESTING
+
     data_transform_test = transforms.Compose([
         transforms.ToPILImage(),
         transforms.Resize((224, 224)),
@@ -123,15 +120,31 @@ def main():
 
     dataset_train = ClothingAttributeDataset(labels_dir, images_dir, data_transform_train, train=True)
     dataset_test = ClothingAttributeDataset(labels_dir, images_dir, data_transform_test, train=False)
-    # Not sure how to split for val set
+
+    # Now random splitting for train-val
+    num_train = len(dataset_train)
+    indices = list(range(num_train))
+    split = 372
+
+    validation_idx = np.random.choice(indices, size=split, replace=False)
+    train_idx = list(set(indices) - set(validation_idx))
+    train_sampler = sampler.SubsetRandomSampler(train_idx)
+    validation_sampler = sampler.SubsetRandomSampler(validation_idx)
 
     print(len(dataset_train))
     print(len(dataset_test))
 
-    train_loader = DataLoader(dataset_train, batch_size=4, shuffle=True)
-    test_loader = DataLoader(dataset_test, batch_size=4, shuffle=True)
+    train_loader = DataLoader(dataset_train, batch_size=4, sampler=train_sampler)  # shuffle=True ?
+    val_loader = DataLoader(dataset_train, batch_size=4, sampler=validation_sampler)  # shuffle=True ?
+    test_loader = DataLoader(dataset_test, batch_size=4)  # shuffle=True ?
 
     sample = next(iter(train_loader))
+    images = sample['image']
+    labels = sample['labels']
+    print(images.shape)
+    print(labels.shape)
+
+    sample = next(iter(val_loader))
     images = sample['image']
     labels = sample['labels']
     print(images.shape)
@@ -154,4 +167,5 @@ TODO:
 - Compute the correct mean and std
 - Data augmentation same as in A. Krizhevsky et al.
 - Divide into train, test, val
+- Get rid of non-binary attributes
 '''
