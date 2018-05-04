@@ -36,10 +36,10 @@ class ClothingAttributeDataset(Dataset):
         self.attributes_matrix = self.attributes['black']
         for category in self.categories[1:]:
             self.attributes_matrix = np.hstack((self.attributes_matrix, self.attributes[category]))
-        #if self.train:
-        #    self.attributes_matrix = self.attributes_matrix[:1484]
-        #else:
-        #    self.attributes_matrix = self.attributes_matrix[1484:]
+        if self.train:
+            self.attributes_matrix = self.attributes_matrix[:1484]
+        else:
+            self.attributes_matrix = self.attributes_matrix[1484:]
 
         # Images directory
         self.images_dir = images_dir
