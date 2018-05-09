@@ -6,6 +6,10 @@ import operator
 """
 Python script to compute pairwise Jaccard similarities between categories.
 Note that we will exclude 'sleevelength', 'neckline' and 'category' because they have non-binary labels.
+Dataset source: 
+Huizhong Chen, Andrew Gallagher, and Bernd Girod, "Describing Clothing by Semantic Attributes", European Conference on 
+Computer Vision (ECCV), October 2012.
+Research Datasets for Image, Video, and Multimedia Systems Group at Stanford
 """
 
 
