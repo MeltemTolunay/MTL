@@ -29,8 +29,8 @@ def main():
     for i, file in enumerate(os.listdir(directory)):
         dir = os.path.join(directory, file)
         if categories[i] != 'sleevelength' and categories[i] != 'neckline' and categories[i] != 'category':
-            labels = scipy.io.loadmat(dir)['GT'] - 1  # (1856, 1)
-            labels[np.isnan(labels)] = 0
+            labels = scipy.io.loadmat(dir)['GT'] - 1  # (1856, 1) Change labels from (1,2) to (0,1)
+            labels[np.isnan(labels)] = 0  # Note that there are nan labels in the dataset
             attributes[categories[i]] = labels
 
     # This will hold the dictionaries that hold all jaccard similarities for a given category.
