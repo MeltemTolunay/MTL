@@ -16,9 +16,3 @@ GAMMA = 0.1
 
 # Testing
 TEST_BATCH_SIZE = 64
-
-'''
-TODO:
-2 task model
-sparsity
-'''
