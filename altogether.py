@@ -1,18 +1,51 @@
 import torch
-from torch.utils.data import Dataset, DataLoader, sampler
-from torch.autograd import Variable
+from torch.utils.data import DataLoader
 import torch.nn as nn
 import torch.optim as optim
 from torch.optim import lr_scheduler
 import torchvision
-from torchvision import transforms, models
+from torchvision import transforms
 import numpy as np
 import matplotlib.pyplot as plt
-from skimage import io
-import scipy.io
-import os
 import time
 import copy
+from custom_dataset import ClothingAttributeDataset
+from config import *
+
+
+# Data augmentation and normalization for training
+# Just normalization for validation
+data_transforms = {
+    'train': transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.RandomResizedCrop(224),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                             std=[0.229, 0.224, 0.225])
+    ]),
+    'val': transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                             std=[0.229, 0.224, 0.225])
+    ]),
+}
+
+# Image and label directories
+labels_dir = './ClothingAttributeDataset/labels/'
+images_dir = './ClothingAttributeDataset/images/'
+
+# Load the data
+image_datasets = {x: ClothingAttributeDataset(labels_dir, images_dir, x, data_transforms[x]) for x in ['train', 'val']}
+dataloaders = {x: DataLoader(image_datasets[x], batch_size=BATCH_SIZE, shuffle=True) for x in ['train', 'val']}
+dataset_sizes = {x: len(image_datasets[x]) for x in ['train', 'val']}
+
+main_task = 5  # gender
+class_names = ['Male', 'Female']
+
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 def imshow(inp, title=None):
@@ -28,295 +61,150 @@ def imshow(inp, title=None):
     plt.pause(0.001)  # pause a bit so that plots are updated
 
 
-def visualize_model(model, dataloaders, num_images=6, use_gpu=False, titles=None):
+'''
+# Visualize the data
+images, labels = next(iter(dataloaders['train']))
+print(images.shape)
+print(labels.shape)
+
+attribute_num = 5  # gender
+title = ['male' if labels[x][attribute_num] == torch.tensor([0]) else 'female' for x in range(BATCH_SIZE)]
+out = torchvision.utils.make_grid(images)
+imshow(out, title=title)
+plt.ioff()  # otherwise the plot will weirdly disappear
+plt.show()
+'''
+
+loss_history = []
+accuracy_history = []
+
+
+def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
+    since = time.time()
+
+    best_model_wts = copy.deepcopy(model.state_dict())
+    best_acc = 0.0
+
+    for epoch in range(num_epochs):
+        print('Epoch {}/{}'.format(epoch, num_epochs - 1))
+        print('-' * 10)
+
+        # Each epoch has a training and validation phase
+        for phase in ['train', 'val']:
+            if phase == 'train':
+                scheduler.step()
+                model.train()  # Set model to training mode
+            else:
+                model.eval()   # Set model to evaluate mode
+
+            running_loss = 0.0
+            running_corrects = 0
+
+            # Iterate over data.
+            for inputs, labels in dataloaders[phase]:
+                labels = labels[:, main_task]
+                inputs = inputs.to(device)
+                labels = labels.to(device)
+
+                # zero the parameter gradients
+                optimizer.zero_grad()
+
+                # forward
+                # track history if only in train
+                with torch.set_grad_enabled(phase == 'train'):
+                    outputs = model(inputs)
+                    _, preds = torch.max(outputs, 1)
+                    loss = criterion(outputs, labels)
+
+                    # backward + optimize only if in training phase
+                    if phase == 'train':
+                        loss.backward()
+                        optimizer.step()
+
+                # statistics
+                loss_history.append(loss.item())
+                running_loss += loss.item() * inputs.size(0)
+                running_corrects += torch.sum(preds == labels.data)
+
+            epoch_loss = running_loss / dataset_sizes[phase]
+            epoch_acc = running_corrects.double() / dataset_sizes[phase]
+
+            print('{} Loss: {:.4f} Acc: {:.4f}'.format(
+                phase, epoch_loss, epoch_acc))
+            if phase == 'val':
+                accuracy_history.append(epoch_acc)
+
+            # deep copy the model
+            if phase == 'val' and epoch_acc > best_acc:
+                best_acc = epoch_acc
+                best_model_wts = copy.deepcopy(model.state_dict())
+
+        print()
+
+    time_elapsed = time.time() - since
+    print('Training complete in {:.0f}m {:.0f}s'.format(
+        time_elapsed // 60, time_elapsed % 60))
+    print('Best val Acc: {:4f}'.format(best_acc))
+
+    # load best model weights
+    model.load_state_dict(best_model_wts)
+    return model
+
+
+def visualize_model(model, num_images=6):
     was_training = model.training
     model.eval()
     images_so_far = 0
     fig = plt.figure()
 
-    for i, data in enumerate(dataloaders['val']):
-        inputs, labels = data
+    with torch.no_grad():
+        for i, (inputs, labels) in enumerate(dataloaders['val']):
+            inputs = inputs.to(device)
+            labels = labels.to(device)
 
-        if use_gpu:
-            inputs = Variable(inputs.cuda())
-            labels = Variable(labels.cuda())
-        else:
-            inputs = Variable(inputs)
-            labels = Variable(labels)
+            outputs = model(inputs)
+            _, preds = torch.max(outputs, 1)
 
-        outputs = model(inputs)
-        _, preds = torch.max(outputs.data, 1)
+            for j in range(inputs.size()[0]):
+                images_so_far += 1
+                ax = plt.subplot(num_images//2, 2, images_so_far)
+                ax.axis('off')
+                ax.set_title('predicted: {}'.format(class_names[preds[j]]))
+                imshow(inputs.cpu().data[j])
 
-        for j in range(inputs.size()[0]):
-            images_so_far += 1
-            ax = plt.subplot(num_images//2, 2, images_so_far)
-            ax.axis('off')
-            if titles is not None:
-                # title = class_names[preds[j]]
-                title = titles
-                ax.set_title('Predicted: {}'.format(title))
-            imshow(inputs.cpu().data[j])
+                if images_so_far == num_images:
+                    model.train(mode=was_training)
+                    return
+        model.train(mode=was_training)
 
-            if num_images == images_so_far:
-                model.train(mode=was_training)
-                return
 
-    model.train(mode=was_training)
+# Finetune the convnet
+model_conv = torchvision.models.resnet18(pretrained=True)
+for param in model_conv.parameters():
+    param.requires_grad = False
 
+# Parameters of newly constructed modules have requires_grad=True by default
+num_ftrs = model_conv.fc.in_features
+model_conv.fc = nn.Linear(num_ftrs, 2)
+nn.init.xavier_uniform_(model_conv.fc.weight)
 
-class ClothingAttributeDataset(Dataset):
-    """Clothing attributes dataset."""
+model_conv = model_conv.to(device)
 
-    def __init__(self, labels_dir, images_dir, transform=None, train=True):
-        """
-        :param labels_dir: Path to the labels folder.
-        :param images_dir: Path to the images folder.
-        :param transform: Optional transform. (But make sure images are the same size if you choose to omit!)
-        :param train: Train mode or test mode
-        """
-        # Train mode or test mode
-        self.train = train
+criterion = nn.CrossEntropyLoss()
 
-        # Labeling categories
-        self.categories = ['black', 'blue', 'brown', 'category', 'collar', 'cyan', 'gender', 'gray', 'green',
-                           'many_colors', 'neckline', 'necktie', 'pattern_floral', 'pattern_graphics', 'pattern_plaid',
-                           'pattern_solid', 'pattern_spot', 'pattern_stripe', 'placket', 'purple', 'red', 'scarf',
-                           'skin_exposure', 'sleevelength', 'white', 'yellow']
+# Observe that only parameters of final layer are being optimized as opposed to before.
+optimizer_conv = optim.SGD(model_conv.fc.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM)
 
-        # Ground truths for each category as a column vector
-        self.attributes = {}
-        directory = os.fsencode(labels_dir)
-        for i, file in enumerate(os.listdir(directory)):
-            dir = os.path.join(directory, file)
-            self.attributes[self.categories[i]] = scipy.io.loadmat(dir)['GT']  # (1856, 1)
+# Decay LR by a factor of 0.1 every 7 epochs
+exp_lr_scheduler = lr_scheduler.StepLR(optimizer_conv, step_size=STEP_SIZE, gamma=GAMMA)
 
-        # Ground truth matrix (1856 x 26)
-        self.attributes_matrix = self.attributes['black']
-        for category in self.categories[1:]:
-            self.attributes_matrix = np.hstack((self.attributes_matrix, self.attributes[category]))
-            self.attributes_matrix[(self.attributes_matrix == float('nan'))] == 1
+model_conv = train_model(model_conv, criterion, optimizer_conv, exp_lr_scheduler, num_epochs=NUM_EPOCHS)
+torch.save(model_conv, 'baseline_single_task.pt')
 
-        self.attributes_matrix += -1  # Change labels from (1,2) to (0,1)
-        self.attributes_matrix = self.attributes_matrix.astype(int)
+np.savetxt('loss_history.txt', loss_history)
+np.savetxt('acc.txt', accuracy_history)
 
-        if self.train:
-            self.attributes_matrix = self.attributes_matrix[:1484]
-        else:
-            self.attributes_matrix = self.attributes_matrix[1484:]
+visualize_model(model_conv)
 
-        # Images directory
-        self.images_dir = images_dir
-
-        # List of image names as strings
-        self.images_list = []
-        directory = os.fsencode(images_dir)
-        for i, file in enumerate(os.listdir(directory)):
-            filename = file.decode('utf-8')
-            self.images_list.append(filename)
-        if self.train:
-            self.images_list = self.images_list[:1484]
-        else:
-            self.images_list = self.images_list[1484:]
-
-        # Transforms
-        self.transform = transform
-
-    def __len__(self):
-        return len(self.images_list)  # 1484(train) or 372(test)
-
-    def __getitem__(self, index):
-
-        # Full data path to the image
-        image_name = os.path.join(self.images_dir, self.images_list[index])
-
-        # Image in MxNxC
-        image = io.imread(image_name)
-
-        # Transforms (at least call ToTensor here to transpose to CxMxN)
-        if self.transform:
-            image = self.transform(image)
-        else:
-            self.to_tensor = transforms.ToTensor()
-            image = self.to_tensor(image)
-
-        # All labels by taking the row
-        labels = np.asarray(self.attributes_matrix[index, :])
-
-        # Dictionary to be returned
-        sample = {'image': image, 'labels': labels}
-        #sample['image'].shape ==> torch.Size([3, 256, 256])
-        #sample['labels'].shape ==> (26,)
-
-        return sample
-
-
-def train_model(model, criterion, optimizer, scheduler, dataloaders, dataset_sizes, task, num_epochs=2, use_gpu=False):
-    tic = time.time()
-
-    best_model_weights = copy.deepcopy(model.state_dict())
-    best_acc = 0.0
-
-    # EPOCHS
-    for epoch in range(num_epochs):
-        print('Epoch: {}/{}'.format(epoch, num_epochs-1))
-        print('-' * 10)
-
-        # EACH EPOCH HAS TRAIN AND VAL
-        for phase in ['train', 'val']:
-            if phase == 'train':
-                scheduler.step()  # called once every epoch
-                model.train(True)
-            else:
-                model.train(False)
-
-            running_loss = 0.0
-            running_corrects = 0
-
-            # ITERATE OVER DATA
-            for data in dataloaders[phase]:
-                inputs = data['image']
-                labels = data['labels']
-                labels = labels[:, task]
-
-                if use_gpu:
-                    inputs = Variable(inputs.cuda())
-                    labels = Variable(labels.cuda())
-                else:
-                    inputs = Variable(inputs)
-                    labels = Variable(labels)
-
-                optimizer.zero_grad() # called every iteration for a new batch
-
-                outputs = model(inputs)
-                _, preds = torch.max(outputs.data, 1)
-                loss = criterion(outputs, labels)
-
-                if phase == 'train':
-                    loss.backward()
-                    optimizer.step()
-
-                running_loss += loss.data[0] * inputs.size(0)
-                running_corrects += torch.sum(preds == labels.data)
-
-            epoch_loss = running_loss / dataset_sizes[phase]
-            epoch_accuracy = float(running_corrects) / dataset_sizes[phase]
-
-            print('{} Loss: {:.4f} Acc: {:.4f}'.format(phase, epoch_loss, epoch_accuracy))
-
-            if phase == 'val' and epoch_accuracy > best_acc:
-                best_acc = epoch_accuracy
-                best_model_weights = copy.deepcopy(model.state_dict())
-
-        print()
-
-    toc = time.time()
-    time_elapsed = toc - tic
-    print('Training complete in {:.0f} mins {:.0f} secs'.format(
-        time_elapsed // 60, time_elapsed % 60))
-    print('Best val accuracy: {:4f}'.format(best_acc))
-
-    model.load_state_dict(best_model_weights)
-    return model
-
-
-def main():
-    use_gpu = torch.cuda.is_available()
-
-    labels_dir = 'ClothingAttributeDataset/labels/'
-    images_dir = 'ClothingAttributeDataset/images/'
-
-    # Data augmentation and transforms for TRAINING
-    data_transform_train = transforms.Compose([
-        transforms.ToPILImage(),
-        transforms.RandomResizedCrop(224),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                             std=[0.229, 0.224, 0.225])  # Correct these values later?
-    ])
-
-    data_transform_val = transforms.Compose([
-        transforms.ToPILImage(),
-        transforms.Resize((224, 224)),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                             std=[0.229, 0.224, 0.225])  # Correct these values later?
-    ])
-
-    data_transform_test = transforms.Compose([
-        transforms.ToPILImage(),
-        transforms.Resize((224, 224)),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                             std=[0.229, 0.224, 0.225])  # Correct these values later?
-    ])
-
-    dataset_train = ClothingAttributeDataset(labels_dir, images_dir, data_transform_train, train=True)
-    dataset_test = ClothingAttributeDataset(labels_dir, images_dir, data_transform_test, train=False)
-
-    # Now random splitting for train-val
-    num_train = len(dataset_train)
-    indices = list(range(num_train))
-    split = 372
-
-    validation_idx = np.random.choice(indices, size=split, replace=False)
-    train_idx = list(set(indices) - set(validation_idx))
-    train_sampler = sampler.SubsetRandomSampler(train_idx)
-    validation_sampler = sampler.SubsetRandomSampler(validation_idx)
-
-    train_loader = DataLoader(dataset_train, batch_size=4, sampler=train_sampler)  # shuffle=True ?
-    val_loader = DataLoader(dataset_train, batch_size=4, sampler=validation_sampler)  # shuffle=True ?
-    test_loader = DataLoader(dataset_test, batch_size=4)  # shuffle=True ?
-
-    sample = next(iter(train_loader))
-    images = sample['image']
-    labels = sample['labels']
-    print(images.shape)
-    print(labels.shape)
-
-    # Uncomment to visualize the data
-    #out = torchvision.utils.make_grid(images)
-    #imshow(out)
-    #plt.ioff()  # otherwise the plot will weirdly disappear
-    #plt.show()
-
-    dataloaders = {}
-    dataloaders['train'] = train_loader
-    dataloaders['val'] = val_loader
-
-    dataset_sizes = {}
-    dataset_sizes['train'] = 1484
-    dataset_sizes['val'] = 372
-
-    model_ft = models.resnet18(pretrained=True)
-    num_ftrs = model_ft.fc.in_features
-    model_ft.fc = nn.Linear(num_ftrs, 2)
-
-    if use_gpu:
-        model_ft = model_ft.cuda()
-
-    criterion = nn.CrossEntropyLoss()
-
-    # Observe that all parameters are being optimized
-    optimizer_ft = optim.SGD(model_ft.parameters(), lr=0.001, momentum=0.9)
-
-    # Decay LR by a factor of 0.1 every 7 epochs
-    exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=7, gamma=0.1)
-
-    model_ft = train_model(model_ft, criterion, optimizer_ft, exp_lr_scheduler, dataloaders, dataset_sizes, task=11)
-
-    visualize_model(model_ft, dataloaders, num_images=6)
-
-    plt.ioff()  # otherwise the plot will weirdly disappear
-    plt.show()
-
-if __name__ == "__main__":
-    main()
-
-
-
-
-
-
-
-
+plt.ioff()
+plt.show()
