@@ -53,9 +53,9 @@ def main():
         print('Category: ' + cat)
         #print(jaccard_dict[cat])
         print('Max:')
-        print(max(jaccard_dict[cat].items(), key=operator.itemgetter(1)))
+        print(max(mi_dict[cat].items(), key=operator.itemgetter(1)))
         print('Min:')
-        print(min(jaccard_dict[cat].items(), key=operator.itemgetter(1)))
+        print(min(mi_dict[cat].items(), key=operator.itemgetter(1)))
         print()
 
 if __name__ == "__main__":
