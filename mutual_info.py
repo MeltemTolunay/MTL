@@ -51,9 +51,9 @@ def main():
                 p10 = (1.0 * np.sum(diff == 1)) / len(diff)
                 # calculate mutual information from joint and marginal
                 mi = p11 * np.log((p11 + eps) / (p_dict[cat] * p_dict[att])) + \
-                     p10 * np.log((p10 + eps)/ (p_dict[cat] * (1.0 - p_dict[att]))) +  \
-                     p01 * np.log((p01 + eps)/ (p_dict[att] * (1.0 - p_dict[cat]))) +  \
-                     p00 * np.log((p00 + eps)/ ((1.0 - p_dict[cat]) * (1.0 - p_dict[att])))
+                     p10 * np.log((p10 + eps) / (p_dict[cat] * (1.0 - p_dict[att]))) +  \
+                     p01 * np.log((p01 + eps) / (p_dict[att] * (1.0 - p_dict[cat]))) +  \
+                     p00 * np.log((p00 + eps) / ((1.0 - p_dict[cat]) * (1.0 - p_dict[att])))
                 mi_cat[att] = mi
         mi_dict[cat] = mi_cat
 
