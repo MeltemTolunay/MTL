@@ -120,7 +120,7 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
                     _, preds_main = torch.max(outputs_main, 1)
                     _, preds_aux = torch.max(outputs_aux, 1)
                     # For now, add losses with the same weight=[1,1]
-                    loss = criterion(outputs_main, main_labels) + criterion(outputs_aux, aux_labels)  # Check here
+                    loss = criterion(outputs_main, main_labels) + ALPHA * criterion(outputs_aux, aux_labels)  
 
                     # backward + optimize only if in training phase
                     if phase == 'train':
