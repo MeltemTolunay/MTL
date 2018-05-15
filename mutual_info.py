@@ -33,7 +33,8 @@ def main():
     # marginal probs for all attributes
     for att in attributes:
         p_dict[att] = (1.0 * np.count_nonzero(attributes[att])) / len(attributes[att])
-
+    
+    # Numerical stability for log
     eps = 1e-9
 
     # loop over all attribute pairs
