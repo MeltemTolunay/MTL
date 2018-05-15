@@ -16,3 +16,6 @@ GAMMA = 0.1
 
 # Testing
 TEST_BATCH_SIZE = 64
+
+# Two-Task related
+ALPHA = 1
