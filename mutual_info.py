@@ -2,6 +2,8 @@ import os
 import scipy.io
 import numpy as np
 import operator
+
+
 def main():
     """
     Assumes binary attributes, but can be generalized later.
