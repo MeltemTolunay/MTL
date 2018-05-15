@@ -34,6 +34,8 @@ def main():
     for att in attributes:
         p_dict[att] = (1.0 * np.count_nonzero(attributes[att])) / len(attributes[att])
 
+    eps = 1e-9
+
     # loop over all attribute pairs
     for cat in categories:
         mi_cat = {}
@@ -48,10 +50,10 @@ def main():
                 p01 = (1.0 * np.sum(diff == -1)) / len(diff)
                 p10 = (1.0 * np.sum(diff == 1)) / len(diff)
                 # calculate mutual information from joint and marginal
-                mi = p11 * np.log(p11 / (p_dict[cat] * p_dict[att])) + \
-                     p10 * np.log(p10 / (p_dict[cat] * (1.0 - p_dict[att]))) +  \
-                     p01 * np.log(p01 / (p_dict[att] * (1.0 - p_dict[cat]))) +  \
-                     p00 * np.log(p00 / ((1.0 - p_dict[cat]) * (1.0 - p_dict[att])))
+                mi = p11 * np.log((p11 + eps) / (p_dict[cat] * p_dict[att])) + \
+                     p10 * np.log((p10 + eps)/ (p_dict[cat] * (1.0 - p_dict[att]))) +  \
+                     p01 * np.log((p01 + eps)/ (p_dict[att] * (1.0 - p_dict[cat]))) +  \
+                     p00 * np.log((p00 + eps)/ ((1.0 - p_dict[cat]) * (1.0 - p_dict[att])))
                 mi_cat[att] = mi
         mi_dict[cat] = mi_cat
 
@@ -68,152 +70,143 @@ def main():
 if __name__ == "__main__":
     main()
 
-    
+
 '''
-/Users/Meltem/anaconda3/envs/pytorch04/bin/python /Users/Meltem/PycharmProjects/MTL/mutual_info.py
-/Users/Meltem/PycharmProjects/MTL/mutual_info.py:51: RuntimeWarning: divide by zero encountered in log
-  p01 * np.log(p01 / (p_dict[att] * (1.0 - p_dict[cat]))) +  \
-/Users/Meltem/PycharmProjects/MTL/mutual_info.py:51: RuntimeWarning: invalid value encountered in double_scalars
-  p01 * np.log(p01 / (p_dict[att] * (1.0 - p_dict[cat]))) +  \
 Category: black
 Max:
-('gray', 0.04439467144377464)
+('many_colors', 0.07744568982299985)
 Min:
-('necktie', 0.00019510222982007438)
+('necktie', 0.00019510622981998207)
 
 Category: blue
 Max:
-('yellow', 0.07575960125132028)
+('yellow', 0.07575960525132021)
 Min:
-('pattern_graphics', 4.5429400647043145e-05)
+('pattern_graphics', 4.54334006470032e-05)
 
 Category: brown
 Max:
-('yellow', 0.07385197000497788)
+('yellow', 0.07385197400497778)
 Min:
-('pattern_floral', 5.97806040919524e-07)
+('pattern_floral', 6.018060408338537e-07)
 
 Category: collar
 Max:
-('placket', 0.17121431396598197)
+('placket', 0.17121431796598197)
 Min:
-('yellow', 3.108309867822141e-06)
+('yellow', 3.1123098678894246e-06)
 
 Category: cyan
 Max:
-('yellow', 0.09130471182458644)
+('yellow', 0.09130471582458624)
 Min:
-('pattern_solid', 8.242643414739992e-06)
+('pattern_solid', 8.246643414705143e-06)
 
 Category: gender
 Max:
-('collar', 0.09904029751261106)
+('collar', 0.09904030151261113)
 Min:
-('scarf', 0.0002129328540408917)
+('scarf', 0.00021293685404100236)
 
 Category: gray
 Max:
-('black', 0.04439467144377464)
+('black', 0.04439467544377466)
 Min:
-('white', 0.00041236323992113397)
+('white', 0.00041236723992110237)
 
 Category: green
 Max:
-('yellow', 0.10585728470294549)
+('yellow', 0.10585728870294545)
 Min:
-('pattern_stripe', 1.8638199247730206e-06)
+('pattern_stripe', 1.8678199247792635e-06)
 
 Category: many_colors
 Max:
-('black', nan)
+('black', 0.07744568982299985)
 Min:
-('black', nan)
+('pattern_spot', 9.489474568891935e-05)
 
 Category: necktie
 Max:
-('gender', 0.0849145766342859)
+('gender', 0.08491458063428586)
 Min:
-('white', 2.1502034568505676e-05)
+('white', 2.1506034568424858e-05)
 
 Category: pattern_floral
 Max:
-('many_colors', 0.022568754035426068)
+('many_colors', 0.022568758035426066)
 Min:
-('brown', 5.97806040919524e-07)
+('brown', 6.018060408338537e-07)
 
 Category: pattern_graphics
 Max:
-('pattern_solid', 0.05294413124330523)
+('pattern_solid', 0.05294413524330518)
 Min:
-('cyan', 2.7726316233177718e-05)
+('cyan', 2.7730316232964843e-05)
 
 Category: pattern_plaid
 Max:
-('pattern_solid', 0.02843550876715454)
+('pattern_solid', 0.02843551276715444)
 Min:
-('green', 3.162798153062772e-05)
+('green', 3.163198153040075e-05)
 
 Category: pattern_solid
 Max:
-('placket', 0.10837863231165343)
+('placket', 0.10837863631165345)
 Min:
-('cyan', 8.242643414739992e-06)
+('cyan', 8.246643414705143e-06)
 
 Category: pattern_spot
 Max:
-('pattern_solid', 0.04444884872641244)
+('pattern_solid', 0.04444885272641234)
 Min:
-('many_colors', 9.489074568902922e-05)
+('many_colors', 9.489474568891935e-05)
 
 Category: pattern_stripe
 Max:
-('pattern_solid', 0.03735404199380941)
+('pattern_solid', 0.0373540459938094)
 Min:
-('green', 1.8638199247730206e-06)
+('green', 1.8678199247792635e-06)
 
 Category: placket
 Max:
-('collar', 0.17121431396598197)
+('collar', 0.17121431796598197)
 Min:
-('red', 7.291739390247767e-08)
+('red', 7.691739395730642e-08)
 
 Category: purple
 Max:
-('gray', 0.004126473935266193)
+('many_colors', 0.007897738648570912)
 Min:
-('pattern_floral', 6.176226927232664e-06)
+('pattern_floral', 6.180226926937851e-06)
 
 Category: red
 Max:
-('pattern_plaid', 0.009708787424077407)
+('pattern_plaid', 0.009708791424077408)
 Min:
-('placket', 7.291739390247767e-08)
+('placket', 7.691739395730642e-08)
 
 Category: scarf
 Max:
-('pattern_solid', 0.025655902289111212)
+('pattern_solid', 0.02565590628911113)
 Min:
-('yellow', 1.1531506854336343e-05)
+('yellow', 1.1535506854161415e-05)
 
 Category: skin_exposure
 Max:
-('placket', 0.055811105401129116)
+('placket', 0.05581110940112916)
 Min:
-('green', 0.0003218475779107749)
+('green', 0.00032185157791077886)
 
 Category: white
 Max:
-('cyan', 0.03702113395008931)
+('cyan', 0.037021137950089315)
 Min:
-('collar', 8.04928714135322e-06)
+('collar', 8.053287141397193e-06)
 
 Category: yellow
 Max:
-('green', 0.10585728470294548)
+('green', 0.10585728870294545)
 Min:
-('placket', 3.484349055418002e-07)
-
-
-Process finished with exit code 0
-
+('placket', 3.52434905520789e-07)
 '''
