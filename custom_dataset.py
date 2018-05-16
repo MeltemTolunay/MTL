@@ -27,10 +27,13 @@ class ClothingAttributeDataset(Dataset):
 
         # Ground truths for each category as a column vector
         self.attributes = {}
-        directory = os.fsencode(labels_dir)
-        for i, file in enumerate(os.listdir(directory)):
-            dir = os.path.join(directory, file)
-            self.attributes[self.categories[i]] = scipy.io.loadmat(dir)['GT']  # (1856, 1)
+        # directory = os.fsencode(labels_dir)
+        # for i, file in enumerate(os.listdir(directory)):
+        #    dir = os.path.join(directory, file)
+        #    self.attributes[self.categories[i]] = scipy.io.loadmat(dir)['GT']  # (1856, 1)
+        for cat in self.categories:
+            dir = os.fsencode(labels_dir + cat + "_GT.mat")
+            self.attributes[cat] = scipy.io.loadmat(dir)['GT']
 
         # Ground truth matrix (1856 x 23)
         self.attributes_matrix = self.attributes['black']
