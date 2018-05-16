@@ -57,7 +57,11 @@ if __name__ == "__main__":
 
 
 '''
-[('purple', 0.9585), ('red', 0.9499), ('pattern_spot', 0.9456), ('pattern_plaid', 0.9434), ('pattern_graphics', 0.9407), ('pattern_stripe', 0.9246), ('yellow', 0.9036), ('skin_exposure', 0.896), ('green', 0.8949), ('cyan', 0.8912), ('pattern_floral', 0.8885), ('blue', 0.8588), ('brown', 0.8491), ('many_colors', 0.8303), ('necktie', 0.8233), ('scarf', 0.7716), ('gray', 0.7538), ('white', 0.6886), ('black', 0.6659), ('collar', 0.5178), ('gender', 0.4106), ('placket', 0.3755), ('pattern_solid', 0.2376)]
+[('purple', 0.9585), ('red', 0.9499), ('pattern_spot', 0.9456), ('pattern_plaid', 0.9434), ('pattern_graphics', 0.9407), 
+('pattern_stripe', 0.9246), ('yellow', 0.9036), ('skin_exposure', 0.896), ('green', 0.8949), ('cyan', 0.8912), 
+('pattern_floral', 0.8885), ('blue', 0.8588), ('brown', 0.8491), ('many_colors', 0.8303), ('necktie', 0.8233), 
+('scarf', 0.7716), ('gray', 0.7538), ('white', 0.6886), ('black', 0.6659), ('collar', 0.5178), ('gender', 0.4106), 
+('placket', 0.3755), ('pattern_solid', 0.2376)]
 Max:
 ('purple', 0.9585)
 Min:
