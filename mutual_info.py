@@ -33,9 +33,9 @@ def main():
     # marginal probs for all attributes
     for att in attributes:
         p_dict[att] = (1.0 * np.count_nonzero(attributes[att])) / len(attributes[att])
-    
+
     # Numerical stability for log
-    # eps = 1e-9
+    eps = 1e-9
 
     # loop over all attribute pairs
     for cat in categories:
@@ -51,19 +51,10 @@ def main():
                 p01 = (1.0 * np.sum(diff == -1)) / len(diff)
                 p10 = (1.0 * np.sum(diff == 1)) / len(diff)
                 # calculate mutual information from joint and marginal
-                mi = 0 
-                if p11 > 0:
-                    mi += p11 * np.log(p11 / (p_dict[cat] * p_dict[att])) 
-                if p10 > 0:
-                    mi += p10 * np.log(p10 / (p_dict[cat] * (1.0 - p_dict[att])))
-                if p01 > 0:
-                    mi += p01 * np.log(p01 / (p_dict[att] * (1.0 - p_dict[cat])))
-                if p00 > 0:
-                    mi += p00 * np.log(p00 / ((1.0 - p_dict[cat]) * (1.0 - p_dict[att]))) 
-                # mi = p11 * np.log((p11 + eps) / (p_dict[cat] * p_dict[att])) + \
-                     # p10 * np.log((p10 + eps) / (p_dict[cat] * (1.0 - p_dict[att]))) +  \
-                     # p01 * np.log((p01 + eps) / (p_dict[att] * (1.0 - p_dict[cat]))) +  \
-                     # p00 * np.log((p00 + eps) / ((1.0 - p_dict[cat]) * (1.0 - p_dict[att])))
+                mi = p11 * np.log((p11 + eps) / (p_dict[cat] * p_dict[att])) + \
+                     p10 * np.log((p10 + eps) / (p_dict[cat] * (1.0 - p_dict[att]))) +  \
+                     p01 * np.log((p01 + eps) / (p_dict[att] * (1.0 - p_dict[cat]))) +  \
+                     p00 * np.log((p00 + eps) / ((1.0 - p_dict[cat]) * (1.0 - p_dict[att])))
                 mi_cat[att] = mi
         mi_dict[cat] = mi_cat
 
@@ -219,4 +210,5 @@ Max:
 ('green', 0.10585728870294545)
 Min:
 ('placket', 3.52434905520789e-07)
+
 '''

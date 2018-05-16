@@ -6,7 +6,7 @@ Config parameters
 BATCH_SIZE = 16
 
 # Training parameters
-NUM_EPOCHS = 25
+NUM_EPOCHS = 2
 
 # Optimizer parameters
 LEARNING_RATE = 1e-4
@@ -15,7 +15,13 @@ STEP_SIZE = 7
 GAMMA = 0.1
 
 # Testing
-TEST_BATCH_SIZE = 64
+TEST_BATCH_SIZE = 500  # entire test set in a single batch (372)
 
 # Two-Task related
 ALPHA = 1
+
+'''
+TODO:
+2 task model
+sparsity
+'''

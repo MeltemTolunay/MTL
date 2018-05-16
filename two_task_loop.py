@@ -199,7 +199,7 @@ for aux in range(2):
             param.requires_grad = False
 
         num_ftrs = model_conv.fc.in_features
-        model = TwoTaskModel(num_ftrs, 2, 2, model_conv)
+        model = TwoTaskModel(num_ftrs, 2, 2, model_conv).to(device)
 
         criterion = nn.CrossEntropyLoss()
 

@@ -27,7 +27,7 @@ images_dir = './ClothingAttributeDataset/images/'
 
 # Load the data
 image_datasets = {x: ClothingAttributeDataset(labels_dir, images_dir, x, data_transforms[x]) for x in ['test']}
-dataloaders = {x: DataLoader(image_datasets[x], batch_size=TEST_BATCH_SIZE, shuffle=True) for x in ['test']}
+dataloaders = {x: DataLoader(image_datasets[x], batch_size=TEST_BATCH_SIZE) for x in ['test']}
 dataset_sizes = {x: len(image_datasets[x]) for x in ['test']}
 
 main_task = 5  # gender
@@ -104,7 +104,6 @@ def visualize_model(model, num_images=6):
 
     for i, (inputs, labels) in enumerate(dataloaders['test']):
         inputs = inputs.to(device)
-        labels = labels.to(device)
 
         outputs = model(inputs)
         _, preds = torch.max(outputs, 1)
@@ -123,7 +122,7 @@ def visualize_model(model, num_images=6):
 
 
 # Load the saved model
-model = torch.load('baseline_single_task.pt')
+model = torch.load('baseline_single_task_unfrozen.pt')
 
 # GPU or CPU
 model = model.to(device)
