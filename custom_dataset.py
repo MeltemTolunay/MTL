@@ -27,19 +27,25 @@ class ClothingAttributeDataset(Dataset):
 
         # Ground truths for each category as a column vector
         self.attributes = {}
-        # directory = os.fsencode(labels_dir)
-        # for i, file in enumerate(os.listdir(directory)):
-        #    dir = os.path.join(directory, file)
-        #    self.attributes[self.categories[i]] = scipy.io.loadmat(dir)['GT']  # (1856, 1)
+       #  directory = os.fsencode(labels_dir)
         for cat in self.categories:
+           #  print(directory)
             dir = os.fsencode(labels_dir + cat + "_GT.mat")
+            # dir = os.path.join(directory, cat + "_GT.mat")
             self.attributes[cat] = scipy.io.loadmat(dir)['GT']
+           #  print(cat, dir)
+        # for i, file in enumerate(os.listdir(directory)):
+           #  dir = os.path.join(directory, file)
+           #  self.attributes[self.categories[i]] = scipy.io.loadmat(dir)['GT']  # (1856, 1)
+           #  print(self.categories[i], dir)
 
         # Ground truth matrix (1856 x 23)
         self.attributes_matrix = self.attributes['black']
         for category in self.categories[1:]:
+            print(category)
             self.attributes_matrix = np.hstack((self.attributes_matrix, self.attributes[category]))
-
+        # print([key for key in self.attributes])
+        # print(self.attributes_matrix.shape)
         self.attributes_matrix += -1  # Change labels from (1,2) to (0,1)
         self.attributes_matrix[np.isnan(self.attributes_matrix)] = 0
         self.attributes_matrix = self.attributes_matrix.astype(int)
@@ -63,7 +69,7 @@ class ClothingAttributeDataset(Dataset):
         for i, file in enumerate(os.listdir(directory)):
             filename = file.decode('utf-8')
             self.images_list.append(filename)
-
+        self.images_list = sorted(self.images_list)
         # Train-val-test separation for images
         if self.mode == 'train':
             self.images_list = self.images_list[:1296]
@@ -73,7 +79,7 @@ class ClothingAttributeDataset(Dataset):
             self.images_list = self.images_list[1484:]
         else:
             raise ValueError('Mode must be train, val or test.')
-
+        print(self.images_list)
         # Transforms
         self.transform = transform
 
