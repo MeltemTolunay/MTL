@@ -3,7 +3,7 @@ import csv
 
 
 losses = []
-with open('loss_history.txt', 'r') as csvfile:
+with open('loss_history_unfrozen.txt', 'r') as csvfile:
     lines = csv.reader(csvfile)
     for line in lines:
         losses.extend(line)
@@ -20,7 +20,7 @@ plt.savefig('loss.jpg')
 
 
 accuracies = []
-with open('accuracy.txt', 'r') as csvfile:
+with open('acc_unfrozen.txt', 'r') as csvfile:
     lines = csv.reader(csvfile)
     for line in lines:
         accuracies.extend(line)

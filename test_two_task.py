@@ -49,7 +49,7 @@ images_dir = './ClothingAttributeDataset/images/'
 
 # Load the data
 image_datasets = {x: ClothingAttributeDataset(labels_dir, images_dir, x, data_transforms[x]) for x in ['test']}
-dataloaders = {x: DataLoader(image_datasets[x], batch_size=TEST_BATCH_SIZE, shuffle=True) for x in ['test']}
+dataloaders = {x: DataLoader(image_datasets[x], batch_size=TEST_BATCH_SIZE) for x in ['test']}
 dataset_sizes = {x: len(image_datasets[x]) for x in ['test']}
 
 main_task = 5  # gender
@@ -112,6 +112,9 @@ def test(model, criterion):
         # statistics
         running_loss += loss.item() * inputs.size(0)
         running_corrects += torch.sum(preds_main == main_labels.data)
+        print(preds_main)
+        print(preds_main == main_labels.data)
+        print(main_labels.data)
 
     test_loss = running_loss / dataset_sizes[phase]
     test_acc = running_corrects.double() / dataset_sizes[phase]
@@ -150,7 +153,7 @@ def visualize_model(model, num_images=6):
 
 
 # Load the saved model
-model = torch.load('baseline_two_task.pt')
+model = torch.load('two_task_aux0.pt')
 
 # GPU or CPU
 model = model.to(device)

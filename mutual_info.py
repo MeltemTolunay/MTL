@@ -25,15 +25,16 @@ def main():
     for i, file in enumerate(os.listdir(directory)):
         dir = os.path.join(directory, file)
         labels = scipy.io.loadmat(dir)['GT'] - 1  # (1856, 1) Change labels from (1,2) to (0,1)
-        labels[np.isnan(labels)] = np.random.randint(2)  # Note that there are nan labels in the dataset
+        # labels[np.isnan(labels)] = np.random.randint(2)  # Note that there are nan labels in the dataset
         attributes[categories[i]] = labels
 
     mi_dict = {}
     p_dict = {}
     # marginal probs for all attributes
     for att in attributes:
-        p_dict[att] = (1.0 * np.count_nonzero(attributes[att])) / len(attributes[att])
-    
+        p_dict[att] = (1.0 * np.count_nonzero(attributes[att])) / (
+                len(attributes[att]) - np.sum(np.isnan(attributes[att])))
+
     # Numerical stability for log
     # eps = 1e-9
 
@@ -45,31 +46,32 @@ def main():
                 # need both diff and tot to get joint distribution
                 diff = attributes[cat] - attributes[att]
                 tot = attributes[cat] + attributes[att]
+                num_notnan = len(attributes[att]) - np.sum(np.isnan(attributes[att]))
                 # use diff and tot to get joint distribution
-                p11 = (1.0 * np.sum(tot == 2)) / len(diff)
-                p00 = (1.0 * np.sum(tot == 0)) / len(diff)
-                p01 = (1.0 * np.sum(diff == -1)) / len(diff)
-                p10 = (1.0 * np.sum(diff == 1)) / len(diff)
+                p11 = (1.0 * np.sum(tot == 2)) / num_notnan
+                p00 = (1.0 * np.sum(tot == 0)) / num_notnan
+                p01 = (1.0 * np.sum(diff == -1)) / num_notnan
+                p10 = (1.0 * np.sum(diff == 1)) / num_notnan
                 # calculate mutual information from joint and marginal
-                mi = 0 
+                mi = 0
                 if p11 > 0:
-                    mi += p11 * np.log(p11 / (p_dict[cat] * p_dict[att])) 
+                    mi += p11 * np.log(p11 / (p_dict[cat] * p_dict[att]))
                 if p10 > 0:
                     mi += p10 * np.log(p10 / (p_dict[cat] * (1.0 - p_dict[att])))
                 if p01 > 0:
                     mi += p01 * np.log(p01 / (p_dict[att] * (1.0 - p_dict[cat])))
                 if p00 > 0:
-                    mi += p00 * np.log(p00 / ((1.0 - p_dict[cat]) * (1.0 - p_dict[att]))) 
-                # mi = p11 * np.log((p11 + eps) / (p_dict[cat] * p_dict[att])) + \
-                     # p10 * np.log((p10 + eps) / (p_dict[cat] * (1.0 - p_dict[att]))) +  \
-                     # p01 * np.log((p01 + eps) / (p_dict[att] * (1.0 - p_dict[cat]))) +  \
-                     # p00 * np.log((p00 + eps) / ((1.0 - p_dict[cat]) * (1.0 - p_dict[att])))
+                    mi += p00 * np.log(p00 / ((1.0 - p_dict[cat]) * (1.0 - p_dict[att])))
+                    # mi = p11 * np.log((p11 + eps) / (p_dict[cat] * p_dict[att])) + \
+                    # p10 * np.log((p10 + eps) / (p_dict[cat] * (1.0 - p_dict[att]))) +  \
+                    # p01 * np.log((p01 + eps) / (p_dict[att] * (1.0 - p_dict[cat]))) +  \
+                    # p00 * np.log((p00 + eps) / ((1.0 - p_dict[cat]) * (1.0 - p_dict[att])))
                 mi_cat[att] = mi
         mi_dict[cat] = mi_cat
 
     for cat in mi_dict:
         print('Category: ' + cat)
-        #print(mi_dict[cat])
+        # print(mi_dict[cat])
         print('Max:')
         print(max(mi_dict[cat].items(), key=operator.itemgetter(1)))
         print('Min:')
@@ -79,7 +81,6 @@ def main():
 
 if __name__ == "__main__":
     main()
-
 
 '''
 Category: black

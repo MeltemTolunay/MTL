@@ -160,6 +160,7 @@ def visualize_model(model, num_images=6):
     with torch.no_grad():
         for i, (inputs, labels) in enumerate(dataloaders['val']):
             inputs = inputs.to(device)
+            labels = labels.to(device)
 
             outputs = model(inputs)
             _, preds = torch.max(outputs, 1)
@@ -179,10 +180,6 @@ def visualize_model(model, num_images=6):
 
 # Finetune the convnet
 model_conv = torchvision.models.resnet18(pretrained=True)
-for param in model_conv.parameters():
-    param.requires_grad = False
-
-# Parameters of newly constructed modules have requires_grad=True by default
 num_ftrs = model_conv.fc.in_features
 model_conv.fc = nn.Linear(num_ftrs, 2)
 nn.init.xavier_uniform_(model_conv.fc.weight)
@@ -192,16 +189,16 @@ model_conv = model_conv.to(device)
 criterion = nn.CrossEntropyLoss()
 
 # Observe that only parameters of final layer are being optimized as opposed to before.
-optimizer_conv = optim.SGD(model_conv.fc.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM)
+optimizer_conv = optim.SGD(model_conv.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM)
 
 # Decay LR by a factor of 0.1 every 7 epochs
 exp_lr_scheduler = lr_scheduler.StepLR(optimizer_conv, step_size=STEP_SIZE, gamma=GAMMA)
 
 model_conv = train_model(model_conv, criterion, optimizer_conv, exp_lr_scheduler, num_epochs=NUM_EPOCHS)
-torch.save(model_conv, 'baseline_single_task.pt')
+torch.save(model_conv, 'baseline_single_task_unfrozen.pt')
 
-np.savetxt('loss_history.txt', loss_history)
-np.savetxt('acc.txt', accuracy_history)
+np.savetxt('loss_history_unfrozen.txt', loss_history)
+np.savetxt('acc_unfrozen.txt', accuracy_history)
 
 visualize_model(model_conv)
 

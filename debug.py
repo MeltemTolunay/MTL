@@ -18,8 +18,7 @@ from config import *
 data_transforms = {
     'train': transforms.Compose([
         transforms.ToPILImage(),
-        transforms.RandomResizedCrop(224),
-        transforms.RandomHorizontalFlip(),
+        transforms.Resize((224, 224)),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406],
                              std=[0.229, 0.224, 0.225])
@@ -39,7 +38,7 @@ images_dir = './ClothingAttributeDataset/images/'
 
 # Load the data
 image_datasets = {x: ClothingAttributeDataset(labels_dir, images_dir, x, data_transforms[x]) for x in ['train', 'val']}
-dataloaders = {x: DataLoader(image_datasets[x], batch_size=BATCH_SIZE, shuffle=True) for x in ['train', 'val']}
+dataloaders = {x: DataLoader(image_datasets[x], batch_size=BATCH_SIZE, shuffle=False) for x in ['train', 'val']}
 dataset_sizes = {x: len(image_datasets[x]) for x in ['train', 'val']}
 
 main_task = 5  # gender
@@ -177,6 +176,56 @@ def visualize_model(model, num_images=6):
         model.train(mode=was_training)
 
 
+class View(nn.Module):
+    def __init__(self):
+        super(View, self).__init__()
+
+    def forward(self, input):
+        self.shape = input.shape
+        dim = 1
+        for i in range(1,len(self.shape)):
+            dim *= self.shape[i]
+        return input.view((self.shape[0], dim))
+
+
+model_conv = torchvision.models.resnet18(pretrained=True)
+for param in model_conv.parameters():
+    param.requires_grad = False
+
+# Parameters of newly constructed modules have requires_grad=True by default
+num_ftrs = model_conv.fc.in_features
+model_conv.fc = nn.Linear(num_ftrs, 2)
+nn.init.xavier_uniform_(model_conv.fc.weight)
+
+model_conv = model_conv.to(device)
+
+#model_lin = nn.Sequential(View(), nn.Linear(224*224*3, 2))
+
+criterion = nn.CrossEntropyLoss()
+
+# Observe that only parameters of final layer are being optimized as opposed to before.
+# optimizer_conv = optim.SGD(model_conv.fc.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM)
+optimizer_conv = optim.SGD(filter(lambda p: p.requires_grad, model_conv.parameters()), lr=0)
+#optimizer_lin = optim.SGD(model_lin.parameters(), lr=0)
+
+# Decay LR by a factor of 0.1 every 7 epochs
+exp_lr_scheduler = lr_scheduler.StepLR(optimizer_conv, step_size=STEP_SIZE, gamma=GAMMA)
+model_conv = train_model(model_conv, criterion, optimizer_conv, exp_lr_scheduler, num_epochs=NUM_EPOCHS)
+#exp_lr_scheduler = lr_scheduler.StepLR(optimizer_lin, step_size=STEP_SIZE, gamma=GAMMA)
+#model_lin = train_model(model_lin, criterion, optimizer_lin, exp_lr_scheduler, num_epochs=NUM_EPOCHS)
+
+torch.save(model_conv, 'debug.pt')
+
+np.savetxt('loss_history_debug.txt', loss_history)
+np.savetxt('acc_debug.txt', accuracy_history)
+
+visualize_model(model_conv)
+
+plt.ioff()
+plt.show()
+
+
+"""
 # Finetune the convnet
 model_conv = torchvision.models.resnet18(pretrained=True)
 for param in model_conv.parameters():
@@ -192,18 +241,19 @@ model_conv = model_conv.to(device)
 criterion = nn.CrossEntropyLoss()
 
 # Observe that only parameters of final layer are being optimized as opposed to before.
-optimizer_conv = optim.SGD(model_conv.fc.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM)
+optimizer_conv = optim.SGD(model_conv.fc.parameters(), lr=0)
 
 # Decay LR by a factor of 0.1 every 7 epochs
 exp_lr_scheduler = lr_scheduler.StepLR(optimizer_conv, step_size=STEP_SIZE, gamma=GAMMA)
 
 model_conv = train_model(model_conv, criterion, optimizer_conv, exp_lr_scheduler, num_epochs=NUM_EPOCHS)
-torch.save(model_conv, 'baseline_single_task.pt')
+torch.save(model_conv, 'debug.pt')
 
-np.savetxt('loss_history.txt', loss_history)
-np.savetxt('acc.txt', accuracy_history)
+np.savetxt('loss_history_debug.txt', loss_history)
+np.savetxt('acc_debug.txt', accuracy_history)
 
 visualize_model(model_conv)
 
 plt.ioff()
 plt.show()
+"""

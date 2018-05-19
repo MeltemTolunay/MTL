@@ -64,6 +64,8 @@ class ClothingAttributeDataset(Dataset):
             filename = file.decode('utf-8')
             self.images_list.append(filename)
 
+        self.images_list = sorted(self.images_list)
+
         # Train-val-test separation for images
         if self.mode == 'train':
             self.images_list = self.images_list[:1296]
@@ -78,7 +80,7 @@ class ClothingAttributeDataset(Dataset):
         self.transform = transform
 
     def __len__(self):
-        return len(self.images_list)  # 1112(train) or 372(val) or 372(test)
+        return len(self.images_list)  # (train) or (val) or (test)
 
     def __getitem__(self, index):
 
@@ -103,3 +105,5 @@ class ClothingAttributeDataset(Dataset):
         #labels.shape ==> (26,)
 
         return image, labels
+
+

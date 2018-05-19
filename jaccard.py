@@ -15,7 +15,7 @@ Research Datasets for Image, Video, and Multimedia Systems Group at Stanford
 
 def main():
     # Labels directory
-    labels_dir = './ClothingAttributeDataset/labels'
+    labels_dir = './ClothingAttributeDataset/labels/'
 
     # List of all the labeling categories
     categories = ['black', 'blue', 'brown', 'collar', 'cyan', 'gender', 'gray', 'green',
@@ -25,13 +25,14 @@ def main():
 
     # This will hold the ground truth labels for all images across the categories
     attributes = {}  # {'black': (1856, 1), ... }
-    directory = os.fsencode(labels_dir)
-    np.random.seed(0)
-    for i, file in enumerate(os.listdir(directory)):
-        dir = os.path.join(directory, file)
+    # np.random.seed(0)
+
+    for cat in categories:
+        dir = os.fsencode(labels_dir + cat + "_GT.mat")
         labels = scipy.io.loadmat(dir)['GT'] - 1  # (1856, 1) Change labels from (1,2) to (0,1)
-        labels[np.isnan(labels)] = np.random.randint(2)  # Note that there are nan labels in the dataset
-        attributes[categories[i]] = labels
+        # labels[np.isnan(labels)] = np.random.randint(2)  # Note that there are nan labels in the dataset
+        labels[np.isnan(labels)] = 0
+        attributes[cat] = labels
 
     # This will hold the dictionaries that hold all jaccard similarities for a given category.
     jaccard_dict = {}  # {'black': {}, ... ,'yellow': {}} nested dictionary
@@ -43,9 +44,11 @@ def main():
         # Loop over all other categories except for the current one
         for attribute in attributes:
              if attribute != cat:
-                diff = attributes[attribute] - attributes[cat]
-                intersection = len(diff) - np.count_nonzero(diff)
-                jaccard[attribute] = round(intersection / len(diff), 4)
+                first = np.asarray(attributes[attribute], dtype=int)
+                second = np.asarray(attributes[cat], dtype=int)
+                p = np.count_nonzero(first & second)
+                q = np.count_nonzero(first | second)
+                jaccard[attribute] = round(p / q, 4)
         jaccard_dict[cat] = jaccard
 
     # Print out the results to console (uncomment below if you want to see all similarities)
@@ -58,6 +61,13 @@ def main():
         print(min(jaccard_dict[cat].items(), key=operator.itemgetter(1)))
         print()
 
+    # Let's write the jaccard similarities between gender and other categories to a .txt file
+    f = open('jaccard.txt', 'w')
+    for cat in categories:
+        if cat != 'gender':
+            f.write(cat + ': ' + '{}'.format(jaccard_dict['gender'][cat]) + '\n')
+    f.close()
+
 
 if __name__ == "__main__":
     main()
@@ -68,282 +78,141 @@ When nan is set to 0:
 
 Category: black
 Max:
-('pattern_spot', 0.6589)
+('pattern_solid', 0.3083)
 Min:
-('gender', 0.4677)
+('many_colors', 0.0)
 
 Category: blue
 Max:
-('yellow', 0.8863)
+('placket', 0.0872)
 Min:
-('placket', 0.4079)
+('many_colors', 0.0)
 
 Category: brown
 Max:
-('yellow', 0.8788)
+('collar', 0.1213)
 Min:
-('gender', 0.4256)
+('many_colors', 0.0)
 
 Category: collar
 Max:
-('placket', 0.7662)
+('placket', 0.6511)
 Min:
-('gender', 0.2775)
+('pattern_graphics', 0.006)
 
 Category: cyan
 Max:
-('pattern_floral', 0.9176)
+('pattern_stripe', 0.0698)
 Min:
-('placket', 0.3885)
+('many_colors', 0.0)
 
 Category: gender
 Max:
-('skin_exposure', 0.5361)
+('pattern_solid', 0.309)
 Min:
-('collar', 0.2775)
+('necktie', 0.0032)
 
 Category: gray
 Max:
-('yellow', 0.7834)
+('placket', 0.21)
 Min:
-('gender', 0.4488)
+('many_colors', 0.0)
 
 Category: green
 Max:
-('pattern_floral', 0.9256)
+('pattern_graphics', 0.0489)
 Min:
-('placket', 0.3815)
+('many_colors', 0.0)
 
 Category: many_colors
 Max:
-('pattern_floral', 0.9041)
+('pattern_floral', 0.2089)
 Min:
-('placket', 0.3427)
+('black', 0.0)
 
 Category: necktie
 Max:
-('yellow', 0.8534)
+('collar', 0.2289)
 Min:
-('gender', 0.3346)
+('pattern_floral', 0.0)
 
 Category: pattern_floral
 Max:
-('yellow', 0.9278)
+('many_colors', 0.2089)
 Min:
-('placket', 0.3491)
+('necktie', 0.0)
 
 Category: pattern_graphics
 Max:
-('yellow', 0.9111)
+('many_colors', 0.1219)
 Min:
-('placket', 0.3238)
+('necktie', 0.0)
 
 Category: pattern_plaid
 Max:
-('red', 0.917)
+('red', 0.125)
 Min:
-('pattern_solid', 0.3842)
+('pattern_floral', 0.0)
 
 Category: pattern_solid
 Max:
-('placket', 0.6816)
+('placket', 0.5782)
 Min:
-('many_colors', 0.3475)
+('pattern_spot', 0.0017)
 
 Category: pattern_spot
 Max:
-('purple', 0.9138)
+('white', 0.1206)
 Min:
-('placket', 0.3513)
+('pattern_floral', 0.0)
 
 Category: pattern_stripe
 Max:
-('purple', 0.8949)
+('white', 0.1264)
 Min:
-('placket', 0.3658)
+('pattern_floral', 0.0)
 
 Category: placket
 Max:
-('collar', 0.7662)
+('collar', 0.6511)
 Min:
-('skin_exposure', 0.3028)
+('pattern_graphics', 0.0055)
 
 Category: purple
 Max:
-('pattern_floral', 0.9246)
+('pattern_stripe', 0.0534)
 Min:
-('placket', 0.3739)
+('green', 0.0)
 
 Category: red
 Max:
-('yellow', 0.9181)
+('pattern_plaid', 0.125)
 Min:
-('placket', 0.3879)
+('many_colors', 0.0)
 
 Category: scarf
 Max:
-('yellow', 0.8508)
+('placket', 0.1647)
 Min:
-('gender', 0.4461)
+('pattern_floral', 0.0)
 
 Category: skin_exposure
 Max:
-('pattern_floral', 0.8825)
+('gender', 0.1745)
 Min:
-('placket', 0.3028)
+('necktie', 0.0)
 
 Category: white
 Max:
-('pattern_spot', 0.7602)
+('gender', 0.238)
 Min:
-('pattern_solid', 0.4149)
+('many_colors', 0.0)
 
 Category: yellow
 Max:
-('pattern_floral', 0.9278)
+('gender', 0.0437)
 Min:
-('placket', 0.3761)
-
-
-When nan is set to random with seed=0:
-
-Category: black
-Max:
-('pattern_spot', 0.6589)
-Min:
-('pattern_solid', 0.4477)
-
-Category: blue
-Max:
-('yellow', 0.8863)
-Min:
-('pattern_solid', 0.3324)
-
-Category: brown
-Max:
-('yellow', 0.8788)
-Min:
-('pattern_solid', 0.354)
-
-Category: collar
-Max:
-('placket', 0.7662)
-Min:
-('gender', 0.2818)
-
-Category: cyan
-Max:
-('yellow', 0.9154)
-Min:
-('pattern_solid', 0.2958)
-
-Category: gender
-Max:
-('skin_exposure', 0.5059)
-Min:
-('collar', 0.2818)
-
-Category: gray
-Max:
-('yellow', 0.7834)
-Min:
-('gender', 0.423)
-
-Category: green
-Max:
-('yellow', 0.9256)
-Min:
-('pattern_solid', 0.2909)
-
-Category: many_colors
-Max:
-('yellow', 0.8545)
-Min:
-('pattern_solid', 0.236)
-
-Category: necktie
-Max:
-('purple', 0.7926)
-Min:
-('gender', 0.2899)
-
-Category: pattern_floral
-Max:
-('purple', 0.8567)
-Min:
-('pattern_solid', 0.2619)
-
-Category: pattern_graphics
-Max:
-('purple', 0.9003)
-Min:
-('pattern_solid', 0.1967)
-
-Category: pattern_plaid
-Max:
-('red', 0.917)
-Min:
-('pattern_solid', 0.2155)
-
-Category: pattern_solid
-Max:
-('placket', 0.7575)
-Min:
-('pattern_graphics', 0.1967)
-
-Category: pattern_spot
-Max:
-('purple', 0.9138)
-Min:
-('pattern_solid', 0.2026)
-
-Category: pattern_stripe
-Max:
-('purple', 0.8949)
-Min:
-('pattern_solid', 0.2096)
-
-Category: placket
-Max:
-('collar', 0.7662)
-Min:
-('skin_exposure', 0.3028)
-
-Category: purple
-Max:
-('pattern_spot', 0.9138)
-Min:
-('pattern_solid', 0.2489)
-
-Category: red
-Max:
-('pattern_plaid', 0.917)
-Min:
-('pattern_solid', 0.2414)
-
-Category: scarf
-Max:
-('red', 0.7473)
-Min:
-('pattern_solid', 0.4316)
-
-Category: skin_exposure
-Max:
-('pattern_spot', 0.8728)
-Min:
-('pattern_solid', 0.2468)
-
-Category: white
-Max:
-('cyan', 0.7295)
-Min:
-('pattern_solid', 0.3658)
-
-Category: yellow
-Max:
-('green', 0.9256)
-Min:
-('pattern_solid', 0.2996)
+('cyan', 0.0)
 
 """
 
