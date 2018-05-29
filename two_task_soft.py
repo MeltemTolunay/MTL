@@ -132,9 +132,7 @@ def train_model(model1, model2, criterion, optimizer, scheduler, num_epochs=25):
                             l2_reg = torch.Tensor(W1 - W2).norm()
                         else:
                             l2_reg = l2_reg + torch.Tensor(W1 - W2).norm()
-
-                    print(l2_reg)
-                    print(criterion(outputs_main, main_labels) + ALPHA * criterion(outputs_aux, aux_labels))
+                    
                     loss = criterion(outputs_main, main_labels) + ALPHA * criterion(outputs_aux, aux_labels) + \
                            1 * l2_reg
 
