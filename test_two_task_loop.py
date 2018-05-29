@@ -179,7 +179,3 @@ for auxiliary_task in range(len(categories)):
         #visualize_model(model)
         #plt.ioff()
         #plt.show()
-
-
-
-
