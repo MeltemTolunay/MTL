@@ -1,2 +1,2 @@
-# PyTorch-Playground
+# Multi-task learning
 MTL Project
